@@ -5,6 +5,8 @@ require("dotenv").config(); // Load environment variables from .env
 
 let pool;
 let currentDbType = null;
+let isInitializing = false;
+let initializationPromise = null;
 
 // MariaDB connection wrapper to maintain compatibility with mysql2 syntax
 class MariaDBConnection {
@@ -120,76 +122,98 @@ class MySQLPool {
   }
 }
 
-async function DbConnection() {
+async function initializePool() {
   console.log("🚀 Initializing database connection...");
   
-  if (!pool) {
-    try {
-      // Prepare database configuration
-      const dbConfig = {
-        host: process.env.MARIADB_HOST || process.env.MYSQL_HOST || 'localhost',
-        port: parseInt(process.env.MARIADB_PORT || process.env.MYSQL_PORT || '3306'),
-        user: process.env.MARIADB_USER || process.env.MYSQL_USER || 'root',
-        password: process.env.MARIADB_PASSWORD || process.env.MYSQL_PASSWORD || '',
-        database: process.env.DATABASE_NAME,
-      };
+  // Prepare database configuration
+  const dbConfig = {
+    host: process.env.MARIADB_HOST || process.env.MYSQL_HOST || 'localhost',
+    port: parseInt(process.env.MARIADB_PORT || process.env.MYSQL_PORT || '3306'),
+    user: process.env.MARIADB_USER || process.env.MYSQL_USER || 'root',
+    password: process.env.MARIADB_PASSWORD || process.env.MYSQL_PASSWORD || '',
+    database: process.env.DATABASE_NAME,
+  };
 
-      console.log(`📡 Connecting to: ${dbConfig.host}:${dbConfig.port}`);
+  console.log(`📡 Connecting to: ${dbConfig.host}:${dbConfig.port}`);
 
-      // Detect which database to use
-      const detectedDb = await DatabaseDetector.detectDatabase(dbConfig);
-      
-      if (!detectedDb) {
-        throw new Error('No suitable database server (MariaDB or MySQL) found or connection failed');
-      }
+  // Detect which database to use
+  const detectedDb = await DatabaseDetector.detectDatabase(dbConfig);
+  
+  if (!detectedDb) {
+    throw new Error('No suitable database server (MariaDB or MySQL) found or connection failed');
+  }
 
-      currentDbType = detectedDb;
+  currentDbType = detectedDb;
 
-      if (detectedDb === 'mariadb') {
-        console.log("🟢 Creating MariaDB connection pool...");
-        const mariaPool = mariadb.createPool({
-          host: dbConfig.host,
-          port: dbConfig.port,
-          user: dbConfig.user,
-          password: dbConfig.password,
-          database: dbConfig.database,
-          acquireTimeout: 10000,
-          connectionLimit: 50,
-          idleTimeout: 300000,
-          timeout: 60000,
-        });
-        
-        pool = new MariaDBPool(mariaPool);
-        console.log("✅ Connected to MariaDB database successfully");
-        
-      } else if (detectedDb === 'mysql') {
-        console.log("🔵 Creating MySQL connection pool...");
-        const mysqlPool = mysql.createPool({
-          host: dbConfig.host,
-          port: dbConfig.port,
-          user: dbConfig.user,
-          password: dbConfig.password,
-          database: dbConfig.database,
-          acquireTimeout: 10000,
-          connectionLimit: 50,
-          idleTimeout: 300000,
-          timeout: 60000,
-          waitForConnections: true,
-          queueLimit: 0
-        });
-        
-        pool = new MySQLPool(mysqlPool);
-        console.log("✅ Connected to MySQL database successfully");
-      }
+  if (detectedDb === 'mariadb') {
+    console.log("🟢 Creating MariaDB connection pool...");
+    const mariaPool = mariadb.createPool({
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      password: dbConfig.password,
+      database: dbConfig.database,
+      acquireTimeout: 10000,
+      connectionLimit: 50,
+      idleTimeout: 300000,
+      timeout: 60000,
+    });
+    
+    pool = new MariaDBPool(mariaPool);
+    console.log("✅ Connected to MariaDB database successfully");
+    
+  } else if (detectedDb === 'mysql') {
+    console.log("🔵 Creating MySQL connection pool...");
+    const mysqlPool = mysql.createPool({
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      password: dbConfig.password,
+      database: dbConfig.database,
+      connectionLimit: 50,
+      waitForConnections: true,
+      queueLimit: 0,
+      acquireTimeout: 10000,
+      timeout: 60000
+    });
+    
+    pool = new MySQLPool(mysqlPool);
+    console.log("✅ Connected to MySQL database successfully");
+  }
 
-    } catch (error) {
+  return pool;
+}
+
+async function DbConnection() {
+  // If pool already exists, return it immediately
+  if (pool) {
+    return pool;
+  }
+
+  // If initialization is in progress, wait for it
+  if (isInitializing && initializationPromise) {
+    console.log("⏳ Database initialization in progress, waiting...");
+    return await initializationPromise;
+  }
+
+  // Start initialization
+  isInitializing = true;
+  initializationPromise = initializePool().then(
+    (result) => {
+      isInitializing = false;
+      initializationPromise = null;
+      return result;
+    },
+    (error) => {
+      isInitializing = false;
+      initializationPromise = null;
       console.error("❌ Error creating database connection pool:", error.message);
       throw error;
     }
-  }
+  );
 
   try {
-    return pool;
+    return await initializationPromise;
   } catch (error) {
     console.error(`❌ Error connecting to the ${currentDbType || 'database'}:`, error.message);
     throw error;

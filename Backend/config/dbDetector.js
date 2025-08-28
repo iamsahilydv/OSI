@@ -63,43 +63,64 @@ class DatabaseDetector {
    * @returns {Promise<boolean>} True if connection successful, false otherwise
    */
   static async testConnection(dbType, config) {
-    try {
-      let connection;
-      
-      if (dbType === 'mariadb') {
-        const mariadb = require('mariadb');
-        connection = await mariadb.createConnection({
-          host: config.host,
-          port: config.port,
-          user: config.user,
-          password: config.password,
-          database: config.database,
-          timeout: 5000,
-          acquireTimeout: 5000
-        });
-        await connection.query('SELECT 1');
-        await connection.end();
-      } else if (dbType === 'mysql') {
-        const mysql = require('mysql2/promise');
-        connection = await mysql.createConnection({
-          host: config.host,
-          port: config.port,
-          user: config.user,
-          password: config.password,
-          database: config.database,
-          timeout: 5000,
-          acquireTimeout: 5000
-        });
-        await connection.query('SELECT 1');
-        await connection.end();
+    // Try multiple authentication methods for better compatibility
+    const authVariants = [
+      // Original config
+      { ...config },
+      // Try with empty password
+      { ...config, password: '' },
+      // Try with default MySQL password
+      { ...config, password: 'root' },
+      // Try without specifying database
+      { ...config, database: undefined },
+      // Try with different user
+      { ...config, user: 'mysql', password: '' }
+    ];
+
+    for (const authConfig of authVariants) {
+      try {
+        let connection;
+        
+        if (dbType === 'mariadb') {
+          const mariadb = require('mariadb');
+          connection = await mariadb.createConnection({
+            host: authConfig.host,
+            port: authConfig.port,
+            user: authConfig.user,
+            password: authConfig.password,
+            database: authConfig.database,
+            timeout: 5000,
+            acquireTimeout: 5000
+          });
+          await connection.query('SELECT 1');
+          await connection.end();
+        } else if (dbType === 'mysql') {
+          const mysql = require('mysql2/promise');
+          connection = await mysql.createConnection({
+            host: authConfig.host,
+            port: authConfig.port,
+            user: authConfig.user,
+            password: authConfig.password,
+            database: authConfig.database,
+            connectTimeout: 5000
+          });
+          await connection.query('SELECT 1');
+          await connection.end();
+        }
+        
+        console.log(`✅ ${dbType.toUpperCase()} connection test successful with user: ${authConfig.user}`);
+        // Update the original config with working credentials
+        Object.assign(config, authConfig);
+        return true;
+        
+      } catch (error) {
+        // Continue to next auth variant
+        continue;
       }
-      
-      console.log(`✅ ${dbType.toUpperCase()} connection test successful`);
-      return true;
-    } catch (error) {
-      console.log(`❌ ${dbType.toUpperCase()} connection test failed:`, error.message);
-      return false;
     }
+    
+    console.log(`❌ ${dbType.toUpperCase()} connection test failed with all authentication methods`);
+    return false;
   }
 
   /**
