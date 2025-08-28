@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.395.0",
+    "axios": "^1.10.0",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.1.4",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.1.1",
+    "jsonwebtoken": "^9.0.0",
+    "mariadb": "^3.2.2",
+    "mssql": "^11.0.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.3",
+    "path": "^0.12.7",
+    "serverless-http": "^3.2.0"
+  },
+  "name": "shopingboom",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js",
+    "deploy": "serverless deploy"
+  },
+  "author": "bheem",
+  "license": "ISC",
+  "description": ""
+}

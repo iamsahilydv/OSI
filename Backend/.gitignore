@@ -1,0 +1,53 @@
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+# .env
+# .env.local
+# .env.*.local
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+coverage/
+
+# Debugging files
+*.swp
+
+# PM2 process logs
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm/
+
+# VS Code settings
+.vscode/
+
+# Local database or test data
+*.sqlite
+*.sqlite3
+*.db
+
+# Next.js specific (if you're also using Next.js in root or frontend)
+.next/
+
+# Others
+.idea/
+
+# Temporary files
+/image/*
