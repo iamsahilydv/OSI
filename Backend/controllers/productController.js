@@ -7,6 +7,7 @@ const {
 const {
   validateProductVariations,
   formatVariationsForDisplay,
+  getCategoryAttributes,
 } = require("../helpers/categoryHelper");
 const fs = require("fs");
 const path = require("path");
@@ -563,12 +564,16 @@ const getProductByIdController = async (req, res) => {
     }
     const product = productRes[0];
 
-    // 2. Get category name
+    // 2. Get category name and attributes
     let [categoryRes] = await conn.query(
-      `SELECT name FROM categories WHERE id = ? LIMIT 1`,
+      `SELECT * FROM categories WHERE id = ? LIMIT 1`,
       [product.category_id]
     );
     const category = categoryRes[0]?.name || "Uncategorized";
+    const categoryInfo = categoryRes[0] || null;
+    
+    // Get category attributes
+    const categoryAttributes = await getCategoryAttributes(product.category_id);
 
     // 3. Get product-level images
     const [allImages] = await conn.query(
@@ -636,8 +641,8 @@ const getProductByIdController = async (req, res) => {
       productId: pid,
     });
 
-    // 8. Map images & prices to variations using color
-    const variations = variationsRes.map((v) => {
+    // 8. Map images & prices to variations and format attributes
+    const variations = formatVariationsForDisplay(variationsRes.map((v) => {
       const colorKey = v.color?.toLowerCase()?.trim();
       return {
         ...v,
@@ -645,7 +650,7 @@ const getProductByIdController = async (req, res) => {
         prices: priceMap[v.id] || [],
         qikink_details: qikinkMap[v.id] || null,
       };
-    });
+    }));
 
     // 9. Return the final response
     return res.status(200).json({
@@ -653,6 +658,8 @@ const getProductByIdController = async (req, res) => {
       data: {
         ...product,
         category,
+        categoryInfo,
+        categoryAttributes,
         images: defaultImages,
         variations,
         ratings: ratings[0] || null,
