@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import TopNavbar from "@/components/layout/TopNavbar";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/utils/helpers";
@@ -13,21 +12,19 @@ import {
   Heart,
   Share2,
   ChevronLeft,
-  Star,
   Check,
   Info,
   Package,
   Shield,
   Truck,
   RefreshCw,
+  ArrowLeft,
 } from "lucide-react";
-import api from "@/services/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { addToCart } from "@/services/commonFunction";
-import { useAuth } from "@/context/AuthContext";
-import Cookies from "js-cookie";
+import { mockProducts, mockRecommendations } from "@/data/mockProduct";
 import Link from "next/link";
 
+// Types from the original page
 interface CategoryAttribute {
   id: number;
   attribute_name: string;
@@ -77,71 +74,6 @@ interface Product {
   specifications: any[];
 }
 
-const LoadingSkeleton = () => (
-  <div className="flex flex-col min-h-screen">
-    <PageWrapper className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-6 h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Image Gallery Skeleton */}
-        <div className="space-y-6">
-          <div className="w-full h-[600px] bg-gray-200 rounded-2xl animate-pulse"></div>
-          <div className="flex gap-3">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="w-20 h-20 bg-gray-200 rounded-xl animate-pulse"
-              ></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Product Info Skeleton */}
-        <div className="space-y-6">
-          <div>
-            <div className="h-4 w-32 bg-gray-200 rounded mb-2 animate-pulse"></div>
-            <div className="h-8 w-64 bg-gray-200 rounded mt-2 animate-pulse"></div>
-            <div className="h-6 w-24 bg-gray-200 rounded mt-4 animate-pulse"></div>
-          </div>
-
-          <div>
-            <div className="h-4 w-16 bg-gray-200 rounded mb-2 animate-pulse"></div>
-            <div className="flex gap-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-10 w-16 bg-gray-200 rounded animate-pulse"></div>
-              ))}
-            </div>
-          </div>
-
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-16 w-full bg-gray-200 rounded animate-pulse"></div>
-          <div className="flex gap-4">
-            <div className="h-12 w-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-12 flex-1 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div className="h-12 w-full bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </div>
-    </PageWrapper>
-  </div>
-);
-
-const ErrorState = ({ error }: { error: string | null }) => {
-  const router = useRouter();
-  return (
-    <div className="flex flex-col min-h-screen">
-      <PageWrapper>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-          <p className="text-muted-foreground mb-6">
-            {error || "Product doesn't exist or was removed."}
-          </p>
-          <Button onClick={() => router.push("/shop")}>Back to Shop</Button>
-        </div>
-      </PageWrapper>
-    </div>
-  );
-};
-
 // Helper function to render attribute values based on type
 const renderAttributeValue = (
   attribute: CategoryAttribute,
@@ -149,12 +81,6 @@ const renderAttributeValue = (
   isSelected: boolean = false,
   onClick?: () => void
 ) => {
-  const baseClasses = `px-3 py-2 rounded-lg border-2 transition-all duration-200 ${
-    isSelected 
-      ? "border-primary bg-primary text-primary-foreground shadow-md" 
-      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-  }`;
-
   switch (attribute.attribute_type) {
     case "color":
       const colorValue = typeof value === 'string' ? value.toLowerCase() : '';
@@ -171,6 +97,7 @@ const renderAttributeValue = (
         brown: "#a3a3a3",
         gray: "#6b7280",
         grey: "#6b7280",
+        silver: "#c0c0c0",
       };
       
       return (
@@ -234,7 +161,7 @@ const renderAttributeValue = (
   }
 };
 
-export default function ProductPage() {
+export default function ProductDemoTypePage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
@@ -243,41 +170,22 @@ export default function ProductPage() {
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, any>>({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { cartCount, setCartCount } = useAuth();
-  const token = Cookies.get("usrTkn");
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [recLoading, setRecLoading] = useState(true);
 
-  const productId = params?.id?.toString() || "";
+  const productType = params?.type as keyof typeof mockProducts;
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await api.get(`/products/${productId}`);
-        if (response.data.success && response.data.data) {
-          const productData = response.data.data;
-          setProduct(productData);
-          
-          if (productData.variations.length > 0) {
-            const firstVariation = productData.variations[0];
-            setSelectedVariation(firstVariation);
-            setSelectedAttributes(firstVariation.attributes || {});
-          }
-        } else {
-          setError("Product not found");
-        }
-      } catch (err) {
-        console.error("Fetch error", err);
-        setError("Failed to fetch product details");
-      } finally {
-        setLoading(false);
+    // Load mock product data based on type
+    if (productType && mockProducts[productType]) {
+      const productData = mockProducts[productType];
+      setProduct(productData);
+      
+      if (productData.variations.length > 0) {
+        const firstVariation = productData.variations[0];
+        setSelectedVariation(firstVariation);
+        setSelectedAttributes(firstVariation.attributes || {});
       }
-    };
-    
-    if (productId) fetchProduct();
-  }, [productId]);
+    }
+  }, [productType]);
 
   useEffect(() => {
     if (!product || !selectedAttributes) return;
@@ -295,23 +203,6 @@ export default function ProductPage() {
     }
   }, [selectedAttributes, product]);
 
-  useEffect(() => {
-    if (!productId) return;
-    setRecLoading(true);
-    
-    api
-      .get(`/products/${productId}/recommendations`)
-      .then((res) => {
-        if (res.data.success && Array.isArray(res.data.data)) {
-          setRecommendations(res.data.data);
-        } else {
-          setRecommendations([]);
-        }
-      })
-      .catch(() => setRecommendations([]))
-      .finally(() => setRecLoading(false));
-  }, [productId]);
-
   const handleAttributeSelect = (attributeName: string, value: any) => {
     setSelectedAttributes(prev => ({
       ...prev,
@@ -320,31 +211,23 @@ export default function ProductPage() {
   };
 
   const handleBuyNow = () => {
-    if (!product || !selectedVariation) return;
+    toast({
+      title: "Demo Mode",
+      description: "This is a demo. In production, this would redirect to checkout.",
+    });
+  };
 
-    if (!token) {
-      router.push("/auth/login?returnUrl=/order");
-      return;
-    }
-
-    const cartItems = [
-      {
-        productId: product.id,
-        variationId: selectedVariation.id,
-        quantity: quantity,
-      },
-    ];
-
-    const params = new URLSearchParams();
-    params.append("product", JSON.stringify(cartItems));
-    router.push(`/product/checkout?${params.toString()}`);
+  const handleAddToCart = () => {
+    toast({
+      title: "Added to Cart (Demo)",
+      description: `${product?.name} added to cart in demo mode.`,
+    });
   };
 
   const handleAddToWishlist = () => {
-    if (!product || !selectedVariation) return;
     toast({
-      title: "Added to Wishlist",
-      description: `${product.name} added to your wishlist`,
+      title: "Added to Wishlist (Demo)",
+      description: `${product?.name} added to wishlist in demo mode.`,
     });
   };
 
@@ -369,12 +252,20 @@ export default function ProductPage() {
     }
   };
 
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
-  if (error || !product || !selectedVariation) {
-    return <ErrorState error={error} />;
+  if (!product || !selectedVariation) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <PageWrapper>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Product Type Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              The requested product type doesn't exist in our demo.
+            </p>
+            <Button onClick={() => router.push("/product-demo")}>Back to Demo</Button>
+          </div>
+        </PageWrapper>
+      </div>
+    );
   }
 
   const currentPrice = parseFloat(selectedVariation.selling_price);
@@ -386,20 +277,11 @@ export default function ProductPage() {
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : 0;
 
-  const productImages =
-    selectedVariation.images.length > 0
-      ? selectedVariation.images
-      : product.images.length > 0
-      ? product.images
-      : ["https://source.unsplash.com/random/600x600/?product"];
-
-  // Group attributes by type for better organization
-  const attributeGroups = product.categoryAttributes.reduce((groups, attr) => {
-    const type = attr.attribute_type;
-    if (!groups[type]) groups[type] = [];
-    groups[type].push(attr);
-    return groups;
-  }, {} as Record<string, CategoryAttribute[]>);
+  const productImages = selectedVariation.images.length > 0
+    ? selectedVariation.images
+    : product.images.length > 0
+    ? product.images
+    : ["https://source.unsplash.com/random/600x600/?product"];
 
   // Get available values for each attribute based on variations
   const getAvailableValues = (attributeName: string) => {
@@ -415,14 +297,20 @@ export default function ProductPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <PageWrapper className="w-full max-w-7xl mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          className="mb-8 hover:bg-white"
-          onClick={() => router.push("/shop")}
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Shop
-        </Button>
+        {/* Navigation */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            className="hover:bg-white"
+            onClick={() => router.push("/product-demo")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Demo
+          </Button>
+          <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+            DEMO MODE - {product.category}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images Gallery */}
@@ -512,17 +400,10 @@ export default function ProductPage() {
               </div>
               
               <div className="flex items-center gap-4">
-                {selectedVariation.is_available ? (
-                  <div className="text-green-600 flex items-center font-medium">
-                    <Check className="h-5 w-5 mr-2" />
-                    In Stock ({selectedVariation.stock_quantity} available)
-                  </div>
-                ) : (
-                  <div className="text-red-600 flex items-center font-medium">
-                    <Info className="h-5 w-5 mr-2" />
-                    Out of Stock
-                  </div>
-                )}
+                <div className="text-green-600 flex items-center font-medium">
+                  <Check className="h-5 w-5 mr-2" />
+                  In Stock ({selectedVariation.stock_quantity} available)
+                </div>
               </div>
             </motion.div>
 
@@ -567,7 +448,7 @@ export default function ProductPage() {
               className="space-y-3"
             >
               <h3 className="text-lg font-semibold">Description</h3>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+              <p className="text-gray-600 leading-relaxed">
                 {product.description}
               </p>
             </motion.div>
@@ -621,29 +502,19 @@ export default function ProductPage() {
                 </div>
                 <Button
                   className="flex-1 h-12 text-lg font-semibold"
-                  onClick={() =>
-                    addToCart(
-                      selectedVariation.id,
-                      token || "",
-                      cartCount,
-                      setCartCount,
-                      toast
-                    )
-                  }
-                  disabled={!selectedVariation.is_available}
+                  onClick={handleAddToCart}
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
+                  Add to Cart (Demo)
                 </Button>
               </div>
 
               <Button
                 className="w-full h-12 text-lg font-semibold"
                 onClick={handleBuyNow}
-                disabled={!selectedVariation.is_available}
                 size="lg"
               >
-                Buy Now
+                Buy Now (Demo)
               </Button>
 
               <div className="flex gap-3">
@@ -715,7 +586,7 @@ export default function ProductPage() {
           </motion.div>
         )}
 
-        {/* Recommendations */}
+        {/* Mock Recommendations */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -723,49 +594,30 @@ export default function ProductPage() {
           className="mt-16"
         >
           <h2 className="text-2xl font-bold mb-8">You may also like</h2>
-          {recLoading ? (
-            <div className="flex gap-6 overflow-x-auto">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-64 h-80 bg-white rounded-2xl shadow-lg animate-pulse"
-                />
-              ))}
-            </div>
-          ) : recommendations.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              No recommendations found.
-            </div>
-          ) : (
-            <div className="flex gap-6 overflow-x-auto pb-4">
-              {recommendations.map((rec) => (
-                <Link
-                  key={rec.id}
-                  href={`/product/${rec.id}`}
-                  className="w-64 min-w-[16rem] bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 flex flex-col group"
-                >
-                  <div className="relative w-full h-48 bg-gray-50 rounded-xl mb-4 overflow-hidden">
-                    <Image
-                      src={
-                        rec.images?.[0] ||
-                        "https://source.unsplash.com/random/400x400/?product"
-                      }
-                      alt={rec.name}
-                      fill
-                      className="object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="font-semibold text-lg truncate mb-2">{rec.name}</div>
-                  <div className="text-sm text-gray-500 truncate mb-3">
-                    {rec.brand}
-                  </div>
-                  <div className="text-primary font-bold text-xl mt-auto">
-                    ₹{rec.selling_price || rec.price || "-"}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-6 overflow-x-auto pb-4">
+            {mockRecommendations.map((rec) => (
+              <div
+                key={rec.id}
+                className="w-64 min-w-[16rem] bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 flex flex-col group cursor-pointer"
+              >
+                <div className="relative w-full h-48 bg-gray-50 rounded-xl mb-4 overflow-hidden">
+                  <Image
+                    src={rec.images[0]}
+                    alt={rec.name}
+                    fill
+                    className="object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="font-semibold text-lg truncate mb-2">{rec.name}</div>
+                <div className="text-sm text-gray-500 truncate mb-3">
+                  {rec.brand}
+                </div>
+                <div className="text-primary font-bold text-xl mt-auto">
+                  ₹{parseInt(rec.selling_price).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
         </motion.div>
       </PageWrapper>
     </div>
