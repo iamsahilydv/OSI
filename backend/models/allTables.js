@@ -24,23 +24,16 @@ const createQikinkPodDetailsAndVariationsTable = require("./productPodDetails");
 const createProductImgTable = require("./productImgTable");
 const createProductVariationTable = require("./productVariationTable");
 const createCategoryAttributesTable = require("./categoryAttributesTable");
+const { createAllEnhancedTables } = require("./enhancedProductTable");
+
 
 const createAllTables = async () => {
   try {
-    await createCategoryTable();
+    // Keep existing working tables
     await createUserTable();
-    await createProductTabaleModel();
-    await createProductVariationTable();
-    await createCategoryAttributesTable();
-    await createQikinkPodDetailsAndVariationsTable();
-    await createProductImgTable();
-    await createSubscribeTable();
     await createAddressTable();
-    await createCartTable();
     await createOrderTable();
     await createProfileImgTable();
-    await createPriceTable();
-    await createRatingTable();
     await createCustomerReviewsTable();
     await createProductFeaturesTable();
     await createProductSpecificationsTable();
@@ -51,11 +44,13 @@ const createAllTables = async () => {
     await createUserBankDetailsTable();
     await createUserUpiDetailsTable();
     await createWithdrawlTable();
-    console.log("Tables Created");
+
+    // Create all enhanced tables
+    await createAllEnhancedTables();
+
+    console.log("✅ All tables created successfully");
   } catch (error) {
-    console.log({
-      AllTableCreationError: error.message || " All Table Creation Error!",
-    });
+    console.log({ AllTableCreationError: error.message });
   }
 };
 module.exports = createAllTables;

@@ -1,0 +1,703 @@
+{
+  "info": {
+    "name": "Enhanced Product Management API",
+    "description": "Complete API testing for professional product management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.to.have.status(200)) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Test Electronics\",\n  \"des\": \"Electronic devices for testing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Add Category Attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 2,\n  \"attribute_name\": \"RAM\",\n  \"attribute_type\": \"select\",\n  \"is_required\": true,\n  \"is_filterable\": true,\n  \"options\": [\"4GB\", \"8GB\", \"16GB\", \"32GB\"],\n  \"unit\": \"GB\",\n  \"display_order\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/2/attributes",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "2", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "Get Category Attributes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/categories/2/attributes",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", "2", "attributes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Suppliers",
+      "item": [
+        {
+          "name": "Create Supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"TechSupplier Ltd\",\n  \"company_name\": \"TechSupplier Limited\",\n  \"email\": \"contact@techsupplier.com\",\n  \"phone\": \"+1234567890\",\n  \"website\": \"https://techsupplier.com\",\n  \"address\": {\n    \"address_line1\": \"123 Tech Street\",\n    \"city\": \"Tech City\",\n    \"state\": \"Tech State\",\n    \"country\": \"India\",\n    \"postal_code\": \"12345\"\n  },\n  \"terms\": {\n    \"commission_rate\": 15.50,\n    \"minimum_order_amount\": 1000,\n    \"shipping_cost\": 50,\n    \"processing_time_days\": 3\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": ["{{baseUrl}}"],
+              "path": ["suppliers"]
+            }
+          }
+        },
+        {
+          "name": "Get All Suppliers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": ["{{baseUrl}}"],
+              "path": ["suppliers"]
+            }
+          }
+        },
+        {
+          "name": "Get Supplier By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["suppliers", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Products",
+      "item": [
+        {
+          "name": "Create Own Product (Mobile)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"description\": \"Latest iPhone with advanced features and A17 Pro chip\",\n  \"short_description\": \"Premium smartphone with titanium design\",\n  \"category_id\": 2,\n  \"brand\": \"Apple\",\n  \"model\": \"A3101\",\n  \"product_type\": \"own\",\n  \"stock_management\": \"track\",\n  \"stock_quantity\": 100,\n  \"low_stock_threshold\": 10,\n  \"weight\": 0.187,\n  \"dimensions\": {\n    \"length\": 15.96,\n    \"width\": 7.66,\n    \"height\": 0.83\n  },\n  \"meta_title\": \"iPhone 15 Pro - Buy Latest Apple iPhone\",\n  \"meta_description\": \"Buy iPhone 15 Pro with A17 Pro chip, titanium design, and advanced camera system\",\n  \"status\": \"active\",\n  \"is_featured\": true,\n  \"attributes\": {\n    \"RAM\": \"8GB\",\n    \"Storage\": \"256GB\",\n    \"Display Size\": \"6.1\",\n    \"Processor\": \"A17 Pro\",\n    \"Operating System\": \"iOS 17\",\n    \"Color\": \"Natural Titanium\",\n    \"5G Support\": true,\n    \"Dual SIM\": true,\n    \"Battery Capacity\": \"3274\",\n    \"Fast Charging\": true,\n    \"Wireless Charging\": true\n  },\n  \"variations\": [\n    {\n      \"sku\": \"IPHONE15PRO-256-TITANIUM\",\n      \"variation_name\": \"256GB Natural Titanium\",\n      \"cost_price\": 120000,\n      \"selling_price\": 134900,\n      \"compare_at_price\": 139900,\n      \"stock_quantity\": 50,\n      \"weight\": 0.187,\n      \"attributes\": {\n        \"Storage\": \"256GB\",\n        \"Color\": \"Natural Titanium\"\n      },\n      \"prices\": [\n        {\n          \"amount\": 134900,\n          \"type\": \"regular\",\n          \"currency\": \"INR\"\n        },\n        {\n          \"amount\": 129900,\n          \"type\": \"sale\",\n          \"currency\": \"INR\"\n        }\n      ],\n      \"images\": [\n        \"/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A==\"\n      ]\n    },\n    {\n      \"sku\": \"IPHONE15PRO-512-TITANIUM\",\n      \"variation_name\": \"512GB Natural Titanium\",\n      \"cost_price\": 140000,\n      \"selling_price\": 154900,\n      \"compare_at_price\": 159900,\n      \"stock_quantity\": 30,\n      \"attributes\": {\n        \"Storage\": \"512GB\",\n        \"Color\": \"Natural Titanium\"\n      },\n      \"prices\": [\n        {\n          \"amount\": 154900,\n          \"type\": \"regular\",\n          \"currency\": \"INR\"\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Create Dropshipping Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Bluetooth Headphones\",\n  \"description\": \"High-quality wireless headphones with noise cancellation\",\n  \"short_description\": \"Premium wireless headphones\",\n  \"category_id\": 4,\n  \"brand\": \"TechAudio\",\n  \"product_type\": \"dropship\",\n  \"supplier_id\": 1,\n  \"supplier_sku\": \"WH-NC-001\",\n  \"supplier_price\": 2500,\n  \"stock_management\": \"supplier_managed\",\n  \"weight\": 0.3,\n  \"attributes\": {\n    \"Color\": \"Black\",\n    \"Connectivity\": \"Bluetooth 5.0\",\n    \"Battery Life\": \"30 hours\",\n    \"Noise Cancellation\": true\n  },\n  \"variations\": [\n    {\n      \"sku\": \"WH-NC-001-BLACK\",\n      \"variation_name\": \"Black\",\n      \"supplier_sku\": \"WH-NC-001-BLK\",\n      \"selling_price\": 3999,\n      \"stock_quantity\": 0,\n      \"attributes\": {\n        \"Color\": \"Black\"\n      },\n      \"prices\": [\n        {\n          \"amount\": 3999,\n          \"type\": \"regular\",\n          \"currency\": \"INR\"\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product By ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15 Pro - Updated\",\n  \"description\": \"Updated description with new features\",\n  \"is_featured\": false,\n  \"attributes\": {\n    \"RAM\": \"8GB\",\n    \"Storage\": \"256GB\",\n    \"Color\": \"Blue Titanium\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"iPhone\",\n  \"category_id\": 2,\n  \"brand\": \"Apple\",\n  \"min_price\": 100000,\n  \"max_price\": 200000,\n  \"attributes\": {\n    \"RAM\": \"8GB\",\n    \"5G Support\": true\n  },\n  \"page\": 1,\n  \"limit\": 10,\n  \"sort_by\": \"price_low\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cart Management",
+      "item": [
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variation_id\": 1,\n  \"quantity\": 2,\n  \"price_type\": \"regular\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "add"]
+            }
+          }
+        },
+        {
+          "name": "Get Cart Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"]
+            }
+          }
+        },
+        {
+          "name": "Update Cart Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/1/quantity",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "1", "quantity"]
+            }
+          }
+        },
+        {
+          "name": "Validate Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "1"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Variations & Pricing",
+      "item": [
+        {
+          "name": "Get Product Variations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/1/variations",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1", "variations"]
+            }
+          }
+        },
+        {
+          "name": "Get Variation Prices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/variations/1/prices",
+              "host": ["{{baseUrl}}"],
+              "path": ["variations", "1", "prices"]
+            }
+          }
+        },
+        {
+          "name": "Create Price for Variation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 129900,\n  \"price_type\": \"sale\",\n  \"currency\": \"INR\",\n  \"min_quantity\": 1,\n  \"valid_from\": \"2024-01-01\",\n  \"valid_to\": \"2024-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/variations/1/prices",
+              "host": ["{{baseUrl}}"],
+              "path": ["variations", "1", "prices"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Advanced Features",
+      "item": [
+        {
+          "name": "Get Search Suggestions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/search/suggestions?q=iph&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "suggestions"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "iph"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Recommendations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/1/recommendations",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1", "recommendations"]
+            }
+          }
+        },
+        {
+          "name": "Get Inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/inventory?page=1&limit=20&stock_status=in_stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "stock_status",
+                  "value": "in_stock"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Category Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/filters/categories/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "categories", "2"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Analytics",
+      "item": [
+        {
+          "name": "Get Supplier Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/1/analytics?start_date=2024-01-01&end_date=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["suppliers", "1", "analytics"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analytics/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "products"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Error Testing",
+      "item": [
+        {
+          "name": "Create Product - Missing Required Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Product without name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Add to Cart - Invalid Variation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variation_id\": 99999,\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "add"]
+            }
+          }
+        },
+        {
+          "name": "Unauthorized Request",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/suppliers",
+              "host": ["{{baseUrl}}"],
+              "path": ["suppliers"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
